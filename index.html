@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>식생활 균형 식단 시뮬레이터</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #fdf6e3, #f6f9ff);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .app {
+      max-width: 960px;
+      width: 100%;
+      margin: 24px;
+      background: #ffffffcc;
+      border-radius: 16px;
+      padding: 24px 20px 28px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+    }
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    .screen {
+      display: none;
+    }
+    .screen.active {
+      display: block;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .menu-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 14px 16px;
+      border: 1px solid #e3e3e3;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .menu-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+      border-color: #92c5ff;
+    }
+    .menu-card.selected {
+      border-color: #4b8cf5;
+      box-shadow: 0 8px 22px rgba(75,140,245,0.25);
+    }
+    .menu-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .menu-emoji {
+      font-size: 26px;
+      margin-right: 6px;
+    }
+    .menu-desc {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .menu-meta {
+      font-size: 12px;
+      color: #777;
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    button {
+      border-radius: 999px;
+      padding: 8px 16px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      background: #4b8cf5;
+      color: white;
+      box-shadow: 0 4px 10px rgba(75,140,245,0.35);
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    button:hover {
+      background: #3a78dd;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(75,140,245,0.4);
+    }
+    button.secondary {
+      background: #e5ebf5;
+      color: #333;
+      box-shadow: none;
+    }
+    button.secondary:hover {
+      background: #d4deee;
+      box-shadow: none;
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .story-page {
+      min-height: 160px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 14px;
+      border: 1px dashed #e0cfa6;
+      position: relative;
+      overflow: hidden;
+    }
+    .story-badge {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 11px;
+      color: #777;
+      background: #fdf0d0;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .story-text {
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    .story-page-index {
+      margin-top: 8px;
+      font-size: 12px;
+      text-align: right;
+      color: #666;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #f0f4ff;
+      font-size: 12px;
+      color: #395794;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .builder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .ingredient-group {
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 10px 12px;
+      border: 1px solid #e4e4e4;
+    }
+    .group-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .group-subtitle {
+      font-size: 11px;
+      color: #777;
+      margin-bottom: 6px;
+    }
+    .ingredient-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 13px;
+      padding: 4px 0;
+    }
+    .ingredient-option input {
+      margin-top: 3px;
+    }
+    .ingredient-main {
+      font-weight: 500;
+    }
+    .ingredient-meta {
+      font-size: 11px;
+      color: #666;
+    }
+
+    .summary-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      border: 1px solid #e4e4e4;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .summary-label {
+      color: #666;
+    }
+    .summary-value {
+      font-weight: 600;
+    }
+
+    .result-main-score {
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .result-badge {
+      text-align: center;
+      font-size: 13px;
+      margin-bottom: 12px;
+      color: #555;
+    }
+    .feedback-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 12px 14px;
+      border-left: 5px solid #4b8cf5;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+    .result-list {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .result-list ul {
+      padding-left: 18px;
+      margin: 4px 0 0;
+    }
+
+    @media (max-width: 600px) {
+      .app {
+        margin: 12px;
+        padding: 18px 14px 20px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>식생활 균형 식단 시뮬레이터</h1>
+  <div class="subtitle">
+    5학년 식생활 단원 &lt;균형 잡힌 식단 만들기&gt; 수행 평가용 시뮬레이터
+  </div>
+
+  <!-- 1. 메뉴 선택 화면 -->
+  <div id="screen-menu" class="screen active">
+    <h2>1단계. 어떤 끼니를 만들까요?</h2>
+    <p style="font-size:13px;color:#555;margin-top:4px;">
+      만들고 싶은 메뉴를 고른 뒤, <b>이야기 속으로</b> 들어가 보세요.
+    </p>
+    <div id="menuGrid" class="menu-grid">
+      <!-- JS로 채움 -->
+    </div>
+    <div class="btn-row">
+      <button id="btnMenuNext" disabled>이 메뉴로 이야기 시작하기 ▶</button>
+    </div>
+  </div>
+
+  <!-- 2. 스토리 화면 -->
+  <div id="screen-story" class="screen">
+    <h2>2단계. 작은 동화 속으로 들어가요</h2>
+    <div id="storyContainer" class="story-page">
+      <div class="story-badge" id="storyMenuBadge"></div>
+      <div id="storyText" class="story-text"></div>
+      <div id="storyPageIndex" class="story-page-index"></div>
+    </div>
+    <div class="btn-row">
+      <button class="secondary" id="btnStoryBack">◀ 메뉴 다시 고르기</button>
+      <button id="btnStoryNext">다음 장 넘기기 ▶</button>
+    </div>
+  </div>
+
+  <!-- 3. 재료 선택 화면 -->
+  <div id="screen-builder" class="screen">
+    <h2>3단계. 재료를 골라서 나만의 식단 만들기</h2>
+    <div id="builderSubTitle" style="font-size:13px;color:#555;margin-bottom:6px;"></div>
+    <div class="pill" id="pillBudget"></div>
+    <div class="pill" id="pillCalorie"></div>
+    <div class="pill" id="pillGoal"></div>
+
+    <div id="builderGrid" class="builder-grid">
+      <!-- JS로 카테고리 & 재료 렌더링 -->
+    </div>
+
+    <div class="summary-box" id="selectionSummary">
+      <div class="summary-row">
+        <div class="summary-label">선택한 재료 수</div>
+        <div class="summary-value" id="sumCount">0개</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">예상 칼로리</div>
+        <div class="summary-value" id="sumCalorie">0 kcal</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">예상 가격</div>
+        <div class="summary-value" id="sumPrice">0원</div>
+      </div>
+      <div class="summary-row">
+        <div class="summary-label">포함된 영양소 종류</div>
+        <div class="summary-value" id="sumNutrients">-</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary" id="btnBuilderBack">◀ 이야기 다시 보기</button>
+      <button id="btnEvaluate">점수 & 피드백 보기 ▶</button>
+    </div>
+  </div>
+
+  <!-- 4. 결과 화면 -->
+  <div id="screen-result" class="screen">
+    <h2>4단계. 점수와 피드백</h2>
+    <div class="result-main-score">
+      총점 <span id="resultScore">0</span>점 / 100점
+    </div>
+    <div class="result-badge" id="resultBadge"></div>
+    <div class="feedback-box" id="feedbackText"></div>
+
+    <div class="result-list">
+      <strong>📌 내 식단 요약</strong>
+      <ul id="resultSummaryList">
+        <!-- JS로 채움 -->
+      </ul>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary" id="btnResultBack">◀ 재료 다시 고르기</button>
+      <button id="btnRestart">처음부터 다시 하기 🔁</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --------- 데이터 정의 ---------
+
+  const MENUS = {
+    sandwich: {
+      key: "sandwich",
+      emoji: "🥪",
+      name: "아침 샌드위치 세트",
+      desc: "아침 등교 전에 후다닥 만드는 건강한 샌드위치",
+      budget: 5000,
+      calorieMin: 350,
+      calorieMax: 500,
+      goal: "탄수화물 + 단백질 + 채소가 모두 들어가면 좋아요!"
+    },
+    lunchbox: {
+      key: "lunchbox",
+      emoji: "🍱",
+      name: "점심 도시락",
+      desc: "학교에서 먹을 알록달록 영양 만점 도시락",
+      budget: 7000,
+      calorieMin: 500,
+      calorieMax: 750,
+      goal: "주식 + 단백질 반찬 + 채소 반찬 + 과일이면 완벽해요!"
+    },
+    salad: {
+      key: "salad",
+      emoji: "🥗",
+      name: "간식 샐러드 볼",
+      desc: "공부하다가 먹는 가벼운 샐러드 간식",
+      budget: 4000,
+      calorieMin: 200,
+      calorieMax: 400,
+      goal: "채소와 과일이 풍부하고, 단백질이 조금 들어가면 좋아요!"
+    }
+  };
+
+  // 메뉴별 스토리 (동화 느낌)
+  const STORY_PAGES = {
+    sandwich: [
+      "아침 햇살이 살짝 비치는 창가.\n알람 소리에 눈을 뜬 너는 잠깐 멍하니 창밖을 바라봤어요.\n오늘은 학교에서 '건강한 아침 챌린지' 날!\n직접 만든 샌드위치를 가져와야 하는 특별한 날이에요.",
+      "냉장고를 열어보니 여러 가지 재료들이 너를 기다리고 있었어요.\n“나를 써줘! 나를 써줘!”\n식빵, 계란, 양상추, 토마토, 치즈가 서로 먼저 들어가고 싶어 하네요.\n하지만 아무 재료나 막 넣으면 영양이 엉망이 될지도 몰라요.",
+      "오늘 하루 집중해서 수업을 듣고 싶다면,\n탄수화물, 단백질, 채소가 골고루 들어간 샌드위치를 만들어야 해요.\n이제 어떤 재료들을 선택할지 신중하게 골라볼까요?"
+    ],
+    lunchbox: [
+      "내일은 기다리고 기다리던 '피크닉 날'이에요.\n선생님은 도시락을 직접 싸 오는 날이라고 알려주셨어요.\n“그냥 아무거나 싸 오면 되겠지?”\n처음엔 그렇게 생각했지만, 문득 떠오른 말이 있어요.",
+      "“균형 잡힌 식단이 건강한 몸을 만든다.”\n실과 시간에 배운 말이 떠오르자,\n너는 이번에는 진짜로 영양까지 생각해서 도시락을 싸보기로 했어요.\n밥, 단백질 반찬, 채소 반찬, 과일까지 고루 들어가면 좋겠죠?",
+      "냉장고와 찬장을 살펴보니 재료들이 꽤 많아요.\n하지만 예산도 있고, 너무 기름지지만 않게 만드는 것도 중요해요.\n이제 너만의 '피크닉 도시락'을 완성해 볼까요?"
+    ],
+    salad: [
+      "요즘 들어 오후만 되면 눈이 스르르 감기고,\n집에 돌아오면 금세 지쳐버리곤 해요.\n“혹시 내가 간식을 너무 과자로만 먹어서 그런가?”\n너는 스스로에게 이렇게 물어봤어요.",
+      "실과 시간에 배운 '건강한 간식' 이야기가 떠오르네요.\n과자 대신 채소와 과일, 그리고 조금의 단백질이 들어간 가벼운 간식을 먹으면\n몸도 마음도 한결 가벼워질 수 있다고 했죠.",
+      "그래서 오늘은 '건강한 샐러드 볼'을 만들어 보기로 했어요.\n어떤 채소와 과일을 넣고,\n어떤 단백질을 살짝 곁들이면 좋을까요?\n이제 재료를 골라서 나만의 샐러드 볼을 완성해요!"
+    ]
+  };
+
+  // 재료 정의
+  // nutrients: 대략적인 그룹 이름들 (탄수화물, 단백질, 채소, 과일, 지방, 칼슘, 식이섬유 등)
+  const INGREDIENTS = {
+    sandwich: {
+      groups: [
+        {
+          key: "main",
+          title: "빵(주식)",
+          subtitle: "샌드위치의 기본이 되는 빵을 골라요.",
+          options: [
+            {
+              id: "white_bread",
+              name: "식빵 2장",
+              calories: 160,
+              price: 700,
+              nutrients: ["탄수화물"],
+              note: "부드럽지만 식이섬유는 적어요."
+            },
+            {
+              id: "whole_bread",
+              name: "통밀빵 2장",
+              calories: 170,
+              price: 1000,
+              nutrients: ["탄수화물", "식이섬유"],
+              note: "식이섬유가 풍부해요."
+            },
+            {
+              id: "tortilla",
+              name: "또띠아 1장",
+              calories: 150,
+              price: 900,
+              nutrients: ["탄수화물"],
+              note: "돌돌 말기 좋은 빵이에요."
+            }
+          ]
+        },
+        {
+          key: "protein",
+          title: "단백질 재료",
+          subtitle: "포만감을 주는 단백질을 선택해요.",
+          options: [
+            {
+              id: "egg",
+              name: "계란 프라이",
+              calories: 90,
+              price: 800,
+              nutrients: ["단백질"],
+              note: "단백질이 풍부한 기본 재료."
+            },
+            {
+              id: "chicken_slice",
+              name: "슬라이스 치킨",
+              calories: 100,
+              price: 1500,
+              nutrients: ["단백질"],
+              note: "살코기라 비교적 지방이 적어요."
+            },
+            {
+              id: "ham",
+              name: "햄",
+              calories: 110,
+              price: 1200,
+              nutrients: ["단백질"],
+              note: "가공식품이라 나트륨이 많아요."
+            }
+          ]
+        },
+        {
+          key: "veggie",
+          title: "채소·과일",
+          subtitle: "비타민과 무기질을 책임지는 친구들!",
+          options: [
+            {
+              id: "lettuce",
+              name: "양상추 한 줌",
+              calories: 10,
+              price: 500,
+              nutrients: ["채소", "식이섬유"],
+              note: "아삭아삭 식감을 더해줘요."
+            },
+            {
+              id: "tomato",
+              name: "토마토 슬라이스",
+              calories: 15,
+              price: 700,
+              nutrients: ["채소", "비타민"],
+              note: "색깔과 상큼함을 더해줘요."
+            },
+            {
+              id: "apple_slice",
+              name: "사과 슬라이스",
+              calories: 30,
+              price: 800,
+              nutrients: ["과일", "비타민"],
+              note: "샌드위치에 달콤함을 더해줘요."
+            }
+          ]
+        },
+        {
+          key: "extra",
+          title: "기타 재료",
+          subtitle: "맛을 더해주는 재료지만 너무 많이 넣지 않도록!",
+          options: [
+            {
+              id: "cheese",
+              name: "슬라이스 치즈",
+              calories: 70,
+              price: 700,
+              nutrients: ["지방", "칼슘"],
+              note: "칼슘이 있지만 지방도 있어요."
+            },
+            {
+              id: "mayo",
+              name: "마요네즈 한 스푼",
+              calories: 90,
+              price: 300,
+              nutrients: ["지방"],
+              note: "맛은 좋지만 지방이 많아요."
+            },
+            {
+              id: "olive_oil",
+              name: "올리브유 살짝",
+              calories: 60,
+              price: 500,
+              nutrients: ["지방"],
+              note: "식물성 지방으로 조금은 괜찮아요."
+            }
+          ]
+        }
+      ]
+    },
+    lunchbox: {
+      groups: [
+        {
+          key: "staple",
+          title: "주식(밥/면)",
+          subtitle: "도시락의 중심이 되는 주식을 골라요.",
+          options: [
+            {
+              id: "white_rice",
+              name: "흰쌀밥 1공기",
+              calories: 300,
+              price: 1000,
+              nutrients: ["탄수화물"],
+              note: "가장 기본적인 밥이에요."
+            },
+            {
+              id: "mixed_rice",
+              name: "잡곡밥 1공기",
+              calories: 310,
+              price: 1300,
+              nutrients: ["탄수화물", "식이섬유"],
+              note: "식이섬유와 무기질이 더 들어 있어요."
+            },
+            {
+              id: "noodle",
+              name: "비빔국수 1인분",
+              calories: 350,
+              price: 1500,
+              nutrients: ["탄수화물"],
+              note: "국수지만 채소와 함께 먹으면 좋아요."
+            }
+          ]
+        },
+        {
+          key: "main_side",
+          title: "단백질 반찬",
+          subtitle: "힘을 내게 해 주는 단백질 반찬이에요.",
+          options: [
+            {
+              id: "bulgogi",
+              name: "소불고기",
+              calories: 220,
+              price: 2500,
+              nutrients: ["단백질"],
+              note: "맛있지만 양념과 기름이 조금 많아요."
+            },
+            {
+              id: "chicken_breast",
+              name: "닭가슴살 구이",
+              calories: 160,
+              price: 2200,
+              nutrients: ["단백질"],
+              note: "단백질이 많고 비교적 지방이 적어요."
+            },
+            {
+              id: "fried_shrimp",
+              name: "새우튀김",
+              calories: 200,
+              price: 2300,
+              nutrients: ["단백질", "지방"],
+              note: "기름에 튀겨져 지방이 많아요."
+            }
+          ]
+        },
+        {
+          key: "veggie_side",
+          title: "채소 반찬",
+          subtitle: "비타민과 식이섬유를 채워줘요.",
+          options: [
+            {
+              id: "spinach",
+              name: "시금치나물",
+              calories: 30,
+              price: 700,
+              nutrients: ["채소", "식이섬유"],
+              note: "철분과 비타민이 들어 있어요."
+            },
+            {
+              id: "kimchi",
+              name: "배추김치",
+              calories: 20,
+              price: 500,
+              nutrients: ["채소"],
+              note: "발효 식품이라 장에도 좋아요."
+            },
+            {
+              id: "salad_side",
+              name: "샐러드 한 컵",
+              calories: 40,
+              price: 1000,
+              nutrients: ["채소"],
+              note: "여러 채소가 섞여 있는 샐러드예요."
+            }
+          ]
+        },
+        {
+          key: "fruit",
+          title: "과일 디저트",
+          subtitle: "식사를 마무리하는 상큼한 과일!",
+          options: [
+            {
+              id: "orange",
+              name: "오렌지 한 개",
+              calories: 60,
+              price: 800,
+              nutrients: ["과일", "비타민"],
+              note: "비타민 C가 많아요."
+            },
+            {
+              id: "banana",
+              name: "바나나 한 개",
+              calories: 80,
+              price: 800,
+              nutrients: ["과일"],
+              note: "달콤해서 에너지를 줘요."
+            },
+            {
+              id: "grapes",
+              name: "포도 한 송이",
+              calories: 70,
+              price: 900,
+              nutrients: ["과일"],
+              note: "당이 있어 너무 많이 먹지 않도록 해요."
+            }
+          ]
+        }
+      ]
+    },
+    salad: {
+      groups: [
+        {
+          key: "base",
+          title: "샐러드 베이스",
+          subtitle: "샐러드의 양을 채워주는 기본 채소예요.",
+          options: [
+            {
+              id: "mixed_greens",
+              name: "혼합 채소(상추, 치커리)",
+              calories: 20,
+              price: 800,
+              nutrients: ["채소", "식이섬유"],
+              note: "여러 채소가 섞여 있어요."
+            },
+            {
+              id: "romaine",
+              name: "로메인 상추",
+              calories: 15,
+              price: 700,
+              nutrients: ["채소"],
+              note: "아삭하고 시원한 맛이에요."
+            }
+          ]
+        },
+        {
+          key: "protein_salad",
+          title: "단백질 토핑",
+          subtitle: "샐러드에도 단백질은 필요해요.",
+          options: [
+            {
+              id: "boiled_egg",
+              name: "삶은 계란",
+              calories: 80,
+              price: 700,
+              nutrients: ["단백질"],
+              note: "속을 든든하게 해줘요."
+            },
+            {
+              id: "tofu",
+              name: "구운 두부",
+              calories: 70,
+              price: 800,
+              nutrients: ["단백질"],
+              note: "식물성 단백질이에요."
+            },
+            {
+              id: "yogurt",
+              name: "플레인 요거트",
+              calories: 90,
+              price: 900,
+              nutrients: ["단백질", "칼슘"],
+              note: "드레싱처럼 곁들일 수도 있어요."
+            }
+          ]
+        },
+        {
+          key: "topping",
+          title: "과일·채소 토핑",
+          subtitle: "색깔과 영양을 더해요.",
+          options: [
+            {
+              id: "tomato_cherry",
+              name: "방울토마토",
+              calories: 15,
+              price: 600,
+              nutrients: ["채소", "비타민"],
+              note: "한 입에 쏙 들어가요."
+            },
+            {
+              id: "cucumber",
+              name: "오이 슬라이스",
+              calories: 10,
+              price: 500,
+              nutrients: ["채소"],
+              note: "시원하고 아삭해요."
+            },
+            {
+              id: "apple_cube",
+              name: "사과 조각",
+              calories: 30,
+              price: 700,
+              nutrients: ["과일", "비타민"],
+              note: "샐러드에 달콤함을 더해요."
+            }
+          ]
+        },
+        {
+          key: "dressing",
+          title: "드레싱·기타",
+          subtitle: "샐러드의 맛을 결정하는 소스예요.",
+          options: [
+            {
+              id: "olive_dressing",
+              name: "올리브유+레몬즙",
+              calories: 80,
+              price: 600,
+              nutrients: ["지방"],
+              note: "비교적 건강한 지방이에요."
+            },
+            {
+              id: "cream_dressing",
+              name: "크림 드레싱",
+              calories: 120,
+              price: 700,
+              nutrients: ["지방"],
+              note: "칼로리가 조금 높아요."
+            },
+            {
+              id: "no_dressing",
+              name: "드레싱 없이 먹기",
+              calories: 0,
+              price: 0,
+              nutrients: [],
+              note: "재료 본연의 맛을 느껴요."
+            }
+          ]
+        }
+      ]
+    }
+  };
+
+  // --------- 상태 관리 ---------
+
+  let currentMenuKey = null;
+  let currentStoryIndex = 0;
+
+  // --------- 유틸 함수 ---------
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  function getSelectedIngredients() {
+    const checked = document.querySelectorAll(".ingredient-option input:checked");
+    const list = [];
+    checked.forEach(input => {
+      const info = JSON.parse(input.dataset.info);
+      list.push(info);
+    });
+    return list;
+  }
+
+  function formatCurrency(num) {
+    return num.toLocaleString("ko-KR") + "원";
+  }
+
+  function updateSelectionSummary() {
+    const picked = getSelectedIngredients();
+    const count = picked.length;
+    const totalCal = picked.reduce((sum, item) => sum + item.calories, 0);
+    const totalPrice = picked.reduce((sum, item) => sum + item.price, 0);
+    const nutrientSet = new Set();
+    picked.forEach(item => item.nutrients.forEach(n => nutrientSet.add(n)));
+    const nutrientsText = nutrientSet.size ? Array.from(nutrientSet).join(", ") : "-";
+
+    document.getElementById("sumCount").textContent = count + "개";
+    document.getElementById("sumCalorie").textContent = totalCal + " kcal";
+    document.getElementById("sumPrice").textContent = formatCurrency(totalPrice);
+    document.getElementById("sumNutrients").textContent = nutrientsText;
+  }
+
+  // 평가 로직
+  function evaluateSelection() {
+    if (!currentMenuKey) return { score: 0, feedback: "메뉴 선택 오류", badge: "" };
+
+    const menu = MENUS[currentMenuKey];
+    const picked = getSelectedIngredients();
+
+    if (picked.length === 0) {
+      return {
+        score: 0,
+        feedback: "아직 재료를 하나도 고르지 않았어요.\n각 칸에서 하나씩 골라주세요.",
+        badge: "재료를 선택해 주세요."
+      };
+    }
+
+    const totalCal = picked.reduce((sum, item) => sum + item.calories, 0);
+    const totalPrice = picked.reduce((sum, item) => sum + item.price, 0);
+    const nutrientSet = new Set();
+    picked.forEach(item => item.nutrients.forEach(n => nutrientSet.add(n)));
+
+    let score = 0;
+    let lines = [];
+
+    // 1. 영양 균형 점수 (50점)
+    const nutrientCount = nutrientSet.size;
+    if (nutrientCount >= 4) {
+      score += 50;
+      lines.push("✅ 다양한 영양소가 골고루 들어가 있어요. (영양 점수 50점)");
+    } else if (nutrientCount === 3) {
+      score += 40;
+      lines.push("✅ 영양소가 비교적 골고루 들어가 있어요. (영양 점수 40점)");
+    } else if (nutrientCount === 2) {
+      score += 30;
+      lines.push("⚠ 영양소 종류가 조금 부족해요. 한 가지를 더 추가해 보는 건 어떨까요? (영양 점수 30점)");
+    } else {
+      score += 15;
+      lines.push("⚠ 거의 한 가지 종류의 영양소에만 치우쳐 있어요. 다른 종류 재료도 골라보세요. (영양 점수 15점)");
+    }
+
+    // 2. 예산 점수 (20점)
+    if (totalPrice <= menu.budget) {
+      score += 20;
+      lines.push(`✅ 예산(${formatCurrency(menu.budget)}) 안에서 잘 맞췄어요. (예산 점수 20점)`);
+    } else if (totalPrice <= menu.budget * 1.2) {
+      score += 10;
+      lines.push("⚠ 예산을 조금 넘겼지만 크게 벗어나지는 않았어요. (예산 점수 10점)");
+    } else {
+      lines.push("⚠ 예산을 많이 넘겼어요. 가격이 낮은 재료로 바꿔볼까요? (예산 점수 0점)");
+    }
+
+    // 3. 칼로리 점수 (20점)
+    if (totalCal >= menu.calorieMin && totalCal <= menu.calorieMax) {
+      score += 20;
+      lines.push(`✅ ${menu.calorieMin}~${menu.calorieMax} kcal 범위 안에 있어요. (칼로리 점수 20점)`);
+    } else if (
+      (totalCal >= menu.calorieMin - 50 && totalCal < menu.calorieMin) ||
+      (totalCal > menu.calorieMax && totalCal <= menu.calorieMax + 80)
+    ) {
+      score += 10;
+      lines.push("⚠ 칼로리가 약간 부족하거나 많아요. 그래도 크게 벗어나지는 않았어요. (칼로리 점수 10점)");
+    } else if (totalCal === 0) {
+      lines.push("⚠ 칼로리가 0이에요. 사실상 아무것도 먹지 않는 것과 비슷해요. (칼로리 점수 0점)");
+    } else {
+      lines.push("⚠ 칼로리가 적절한 범위를 많이 벗어났어요. 양을 조절해 볼까요? (칼로리 점수 0점)");
+    }
+
+    // 4. 건강 점수 (10점) – 너무 기름진 선택/가공식품 감점
+    let healthScore = 10;
+    const hasHam = picked.some(item => item.id === "ham");
+    const hasFried = picked.some(item => item.id === "fried_shrimp");
+    const hasCreamDressing = picked.some(item => item.id === "cream_dressing");
+    const mayoCount = picked.some(item => item.id === "mayo");
+
+    let healthLines = [];
+    if (hasHam) {
+      healthScore -= 3;
+      healthLines.push("· 가공식품인 햄을 사용했어요. 나트륨이 많으니 너무 자주 먹지 않도록 해요.");
+    }
+    if (hasFried) {
+      healthScore -= 3;
+      healthLines.push("· 튀김(새우튀김)을 사용했어요. 기름기가 많으니 양을 조절해요.");
+    }
+    if (hasCreamDressing) {
+      healthScore -= 2;
+      healthLines.push("· 크림 드레싱은 칼로리가 높아요. 다른 드레싱과 번갈아 먹으면 좋아요.");
+    }
+    if (mayoCount) {
+      healthScore -= 1;
+      healthLines.push("· 마요네즈를 사용했어요. 한 스푼 정도만 사용하는 것이 좋아요.");
+    }
+    if (healthScore < 0) healthScore = 0;
+    score += healthScore;
+
+    if (healthLines.length === 0) {
+      lines.push("✅ 너무 기름지거나 가공식품 위주의 선택은 아니에요. (건강 점수 10점)");
+    } else {
+      lines.push("⚠ 맛은 좋지만 건강을 조금 더 생각해 볼 수 있어요. (건강 점수 " + healthScore + "점)\n" +
+                 healthLines.join("\n"));
+    }
+
+    // 배지/한줄 평가
+    let badge = "";
+    if (score >= 90) badge = "완벽에 가까운 균형 잡힌 식단이에요! 👍";
+    else if (score >= 75) badge = "꽤 잘 구성된 식단이에요. 약간만 조정하면 더 좋아질 수 있어요.";
+    else if (score >= 50) badge = "기본은 잡혀 있지만, 영양소 종류나 칼로리를 다시 살펴보면 좋아요.";
+    else badge = "이번 기회에 식품군과 영양소를 다시 공부해보면 더 좋은 선택을 할 수 있을 거예요!";
+
+    return {
+      score,
+      feedback: lines.join("\n\n"),
+      badge,
+      totalCal,
+      totalPrice,
+      nutrients: Array.from(nutrientSet),
+      picked
+    };
+  }
+
+  // --------- 렌더링 ---------
+
+  function renderMenuCards() {
+    const grid = document.getElementById("menuGrid");
+    grid.innerHTML = "";
+    Object.values(MENUS).forEach(menu => {
+      const card = document.createElement("div");
+      card.className = "menu-card";
+      card.dataset.key = menu.key;
+
+      card.innerHTML = `
+        <div class="menu-title">
+          <span class="menu-emoji">${menu.emoji}</span>${menu.name}
+        </div>
+        <div class="menu-desc">${menu.desc}</div>
+        <div class="menu-meta">
+          예산 약 ${formatCurrency(menu.budget)} · 권장 칼로리 ${menu.calorieMin}~${menu.calorieMax} kcal
+        </div>
+      `;
+      card.addEventListener("click", () => {
+        document.querySelectorAll(".menu-card").forEach(c => c.classList.remove("selected"));
+        card.classList.add("selected");
+        currentMenuKey = menu.key;
+        document.getElementById("btnMenuNext").disabled = false;
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  function renderStory() {
+    const menu = MENUS[currentMenuKey];
+    const pages = STORY_PAGES[currentMenuKey] || [];
+    const textEl = document.getElementById("storyText");
+    const indexEl = document.getElementById("storyPageIndex");
+    const badgeEl = document.getElementById("storyMenuBadge");
+
+    badgeEl.textContent = `${menu.emoji} ${menu.name}`;
+    textEl.textContent = pages[currentStoryIndex] || "";
+    indexEl.textContent = `${currentStoryIndex + 1} / ${pages.length} 장`;
+
+    const btnNext = document.getElementById("btnStoryNext");
+    btnNext.textContent = currentStoryIndex === pages.length - 1
+      ? "재료 고르러 가기 ▶"
+      : "다음 장 넘기기 ▶";
+  }
+
+  function renderBuilder() {
+    const menu = MENUS[currentMenuKey];
+    const config = INGREDIENTS[currentMenuKey];
+    const grid = document.getElementById("builderGrid");
+    grid.innerHTML = "";
+
+    document.getElementById("builderSubTitle").textContent =
+      `${menu.emoji} ${menu.name}를(을) 만들기 위해 각 칸에서 재료를 하나씩 골라보세요.`;
+    document.getElementById("pillBudget").textContent =
+      `예산: 약 ${formatCurrency(menu.budget)} 이내`;
+    document.getElementById("pillCalorie").textContent =
+      `권장 칼로리: ${menu.calorieMin}~${menu.calorieMax} kcal`;
+    document.getElementById("pillGoal").textContent = `목표: ${menu.goal}`;
+
+    config.groups.forEach(group => {
+      const box = document.createElement("div");
+      box.className = "ingredient-group";
+      box.innerHTML = `
+        <div class="group-title">${group.title}</div>
+        <div class="group-subtitle">${group.subtitle}</div>
+      `;
+      group.options.forEach(opt => {
+        const option = document.createElement("label");
+        option.className = "ingredient-option";
+
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = `group_${group.key}`;
+        input.value = opt.id;
+        input.dataset.info = JSON.stringify(opt);
+
+        input.addEventListener("change", updateSelectionSummary);
+
+        const info = document.createElement("div");
+        info.innerHTML = `
+          <div class="ingredient-main">${opt.name}</div>
+          <div class="ingredient-meta">
+            ${opt.calories} kcal · ${formatCurrency(opt.price)}
+            ${opt.nutrients.length ? " · 영양소: " + opt.nutrients.join(", ") : ""}
+            <br>${opt.note}
+          </div>
+        `;
+
+        option.appendChild(input);
+        option.appendChild(info);
+        box.appendChild(option);
+      });
+
+      grid.appendChild(box);
+    });
+
+    updateSelectionSummary();
+  }
+
+  function renderResult(result) {
+    document.getElementById("resultScore").textContent = result.score;
+    document.getElementById("resultBadge").textContent = result.badge;
+    document.getElementById("feedbackText").textContent = result.feedback;
+
+    const listEl = document.getElementById("resultSummaryList");
+    listEl.innerHTML = "";
+
+    const li1 = document.createElement("li");
+    li1.textContent = `총 칼로리: ${result.totalCal} kcal`;
+    const li2 = document.createElement("li");
+    li2.textContent = `예상 가격: ${formatCurrency(result.totalPrice)}`;
+    const li3 = document.createElement("li");
+    li3.textContent = result.nutrients.length
+      ? `포함된 영양소: ${result.nutrients.join(", ")}`
+      : "포함된 영양소: -";
+    const li4 = document.createElement("li");
+    li4.textContent = "선택한 재료: " + result.picked.map(p => p.name).join(", ");
+
+    listEl.appendChild(li1);
+    listEl.appendChild(li2);
+    listEl.appendChild(li3);
+    listEl.appendChild(li4);
+  }
+
+  // --------- 이벤트 바인딩 ---------
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderMenuCards();
+
+    document.getElementById("btnMenuNext").addEventListener("click", () => {
+      if (!currentMenuKey) return;
+      currentStoryIndex = 0;
+      renderStory();
+      showScreen("screen-story");
+    });
+
+    document.getElementById("btnStoryBack").addEventListener("click", () => {
+      showScreen("screen-menu");
+    });
+
+    document.getElementById("btnStoryNext").addEventListener("click", () => {
+      const pages = STORY_PAGES[currentMenuKey] || [];
+      if (currentStoryIndex < pages.length - 1) {
+        currentStoryIndex += 1;
+        renderStory();
+      } else {
+        // 스토리 끝 → 재료 선택 화면
+        renderBuilder();
+        showScreen("screen-builder");
+      }
+    });
+
+    document.getElementById("btnBuilderBack").addEventListener("click", () => {
+      showScreen("screen-story");
+    });
+
+    document.getElementById("btnEvaluate").addEventListener("click", () => {
+      const result = evaluateSelection();
+      renderResult(result);
+      showScreen("screen-result");
+    });
+
+    document.getElementById("btnResultBack").addEventListener("click", () => {
+      showScreen("screen-builder");
+    });
+
+    document.getElementById("btnRestart").addEventListener("click", () => {
+      // 초기화
+      currentMenuKey = null;
+      currentStoryIndex = 0;
+      renderMenuCards();
+      document.getElementById("btnMenuNext").disabled = true;
+      showScreen("screen-menu");
+    });
+  });
+</script>
+</body>
+</html>
