@@ -251,6 +251,23 @@
       margin: 4px 0 0;
     }
 
+    /* 이미지 프롬프트 영역 */
+    .result-prompt-box {
+      margin-top: 14px;
+      font-size: 13px;
+    }
+    #imagePrompt {
+      width: 100%;
+      min-height: 80px;
+      margin-top: 6px;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #d0d7e2;
+      font-size: 12px;
+      resize: vertical;
+      background: #f8fafc;
+    }
+
     @media (max-width: 600px) {
       .app {
         margin: 12px;
@@ -340,6 +357,14 @@
     <div class="result-list">
       <strong>📌 내 식단 요약</strong>
       <ul id="resultSummaryList"></ul>
+    </div>
+
+    <div class="result-prompt-box">
+      <strong>🖼 이미지 생성 프롬프트</strong>
+      <div style="font-size:11px;color:#666;margin-top:4px;">
+        아래 문장을 복사해서 GPT 이미지 생성에 붙여넣으면, 지금 만든 식단과 비슷한 그림을 볼 수 있어요.
+      </div>
+      <textarea id="imagePrompt" readonly></textarea>
     </div>
 
     <div class="btn-row">
@@ -926,7 +951,15 @@
   // ---------- 평가 ----------
   function evaluateSelection() {
     if (!currentMenuKey) {
-      return { score: 0, feedback: "메뉴가 선택되지 않았어요.", badge: "" };
+      return {
+        score: 0,
+        feedback: "메뉴가 선택되지 않았어요.",
+        badge: "",
+        totalCal: 0,
+        totalPrice: 0,
+        nutrients: [],
+        picked: []
+      };
     }
 
     const menu = MENUS[currentMenuKey];
@@ -936,7 +969,11 @@
       return {
         score: 0,
         feedback: "아직 재료를 하나도 고르지 않았어요.\n각 칸에서 1개 이상씩 골라보세요.",
-        badge: "재료를 먼저 선택해 주세요."
+        badge: "재료를 먼저 선택해 주세요.",
+        totalCal: 0,
+        totalPrice: 0,
+        nutrients: [],
+        picked: []
       };
     }
 
@@ -958,10 +995,10 @@
     let nutritionComments = [];
 
     if (nutrientCount >= 5) {
-      nutritionScore = 40;
+      nutritionScore = 50;
       nutritionComments.push("여러 가지 영양소가 아주 골고루 들어가 있어요.");
     } else if (nutrientCount === 4) {
-      nutritionScore = 36;
+      nutritionScore = 40;
       nutritionComments.push("여러 영양소가 균형 있게 들어가 있어요.");
     } else if (nutrientCount === 3) {
       nutritionScore = 30;
@@ -1193,21 +1230,50 @@
     const listEl = document.getElementById("resultSummaryList");
     listEl.innerHTML = "";
 
+    const totalCal = result.totalCal ?? 0;
+    const totalPrice = result.totalPrice ?? 0;
+    const nutrients = result.nutrients ?? [];
+    const picked = result.picked ?? [];
+
     const li1 = document.createElement("li");
-    li1.textContent = `총 칼로리: ${result.totalCal} kcal`;
+    li1.textContent = `총 칼로리: ${totalCal} kcal`;
     const li2 = document.createElement("li");
-    li2.textContent = `예상 가격: ${formatCurrency(result.totalPrice)}`;
+    li2.textContent = `예상 가격: ${formatCurrency(totalPrice)}`;
     const li3 = document.createElement("li");
-    li3.textContent = result.nutrients.length
-      ? `포함된 영양소: ${result.nutrients.join(", ")}`
+    li3.textContent = nutrients.length
+      ? `포함된 영양소: ${nutrients.join(", ")}`
       : "포함된 영양소: -";
     const li4 = document.createElement("li");
-    li4.textContent = "선택한 재료: " + result.picked.map(p => p.name).join(", ");
+    li4.textContent = picked.length
+      ? "선택한 재료: " + picked.map(p => p.name).join(", ")
+      : "선택한 재료가 아직 없어요.";
 
     listEl.appendChild(li1);
     listEl.appendChild(li2);
     listEl.appendChild(li3);
     listEl.appendChild(li4);
+
+    // 이미지 프롬프트 생성
+    const promptEl = document.getElementById("imagePrompt");
+    if (promptEl) {
+      const menu = MENUS[currentMenuKey] || {};
+      const menuName = menu.name || "식단";
+      const ingredientNames = picked.length
+        ? picked.map(p => p.name).join(", ")
+        : "재료 없음";
+
+      const koPart =
+        `5학년 실과 수업용 균형 잡힌 식단 사진, 메뉴: ${menuName}, ` +
+        `주요 재료: ${ingredientNames}. 위에서 내려다본 시점, 밝은 자연광, ` +
+        `깔끔한 흰 접시 또는 식판, 초등학생 교과서 삽화 느낌, 너무 과하지 않은 현실적인 표현.`;
+
+      const enPart =
+        `A high-quality top-down food photo of a balanced Korean-style meal (` +
+        `${menuName}), made with ${ingredientNames}. Bright natural light, simple background, ` +
+        `clean white plate or lunch tray, educational textbook illustration style, realistic but child-friendly.`;
+
+      promptEl.value = koPart + "\n\n" + enPart;
+    }
   }
 
   // ---------- 이벤트 ----------
@@ -1261,3 +1327,5 @@
 </script>
 </body>
 </html>
+
+<!-- © 2025 이 자료의 저작권은 quasar.sch에게 있습니다. -->
